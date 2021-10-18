@@ -28,7 +28,7 @@ class Film extends Model
      */
     public static function showNominasiTerbesar()
     {
-        return self::select(\DB::raw('max(nominasi) as nominasi, nm_film'))->first();
+        return self::select(\DB::raw('max(nominasi) as nominasi','nm_film'))->first();
     }
 
     /**
@@ -39,7 +39,7 @@ class Film extends Model
     public static function showNominasiPalingBanyak()
     {
         return $query = self::select('nm_film','nominasi')
-            ->where('nominasi',\DB::raw('max(nominasi)'))
+            ->where('nominasi',\DB::raw('(select max(nominasi) from films)'))
             ->get();
     }
 
@@ -73,7 +73,7 @@ class Film extends Model
     public static function showFilmPendapatanOrderTerbesar()
     {
         return $query = self::select('nm_film','pendapatan')
-            ->where('pendapatan',\DB::raw('max(pendapatan)'))
+            ->where('pendapatan',\DB::raw('(select max(pendapatan) from films)'))
             ->get();
     }
 
@@ -119,7 +119,7 @@ class Film extends Model
     public static function showFilmHurufDepanI()
     {
         return self::select('nm_film')
-            ->where(\DB::raw("lower(nm_film) like lower('p%')"))
+            ->where('nm_film',\DB::raw("lower(nm_film) like lower('p%')"))
             ->get();
     }
 
@@ -131,7 +131,7 @@ class Film extends Model
     public static function showFilmHurufTerakhirN()
     {
         return self::select('nm_film')
-            ->where(\DB::raw("lower(nm_film) like lower('%n')"))
+            ->where('nm_film',\DB::raw("lower(nm_film) like lower('%n')"))
             ->get();
     }
 
@@ -156,8 +156,9 @@ class Film extends Model
     {
         return self::select('nm_film','pendapatan')
             ->where('pendapatan',
-                \DB::raw("(select max(pendapatan) from films) and lower (nm_film) like like '%o%'")
+                \DB::raw("(select max(pendapatan) from films)")
             )
+            ->where('nm_film',\DB::raw("lower(nm_film) like '%o%'"))
             ->get();
     }
 
@@ -221,7 +222,7 @@ class Film extends Model
      */
     public static function showNegaraJumlahFilm()
     {
-        return Negara::select(\DB::raw("negaras.nm_negara, count (films.nm_film) as jumlah_film'"))
+        return Negara::select(\DB::raw("negaras.nm_negara"),\DB::raw("'count(films.nm_film) as jumlah_film'"))
             ->leftJoin('artis','negaras.kd_negara','=','artis.negara')
             ->leftJoin('films','artis.kd_artis','=','films.artis')
             ->groupBy('negaras.nm_negara')
@@ -235,7 +236,7 @@ class Film extends Model
      */
     public static function showNamaFilmArtisBayaranRendah()
     {
-        return self::select(\DB::raw('films.nm_film, artis.nm_artis, artis.bayaran'))
+        return self::select(\DB::raw('films.nm_film'), 'artis.nm_artis', 'artis.bayaran')
             ->leftJoin('artis','artis.kd_artis','=','films.artis')
             ->where('artis.bayaran',\DB::raw(
                 '(select min(bayaran)from films
@@ -374,7 +375,7 @@ class Film extends Model
     {
         return self::select('films.nm_film')
         ->leftJoin('artis','artis.kd_artis','=','films.artis')
-        ->where(\DB::raw("upper (artis.nm_artis) like upper ('j%')"))
+        ->where('artis.nm_artis',\DB::raw("upper (artis.nm_artis) like upper ('j%')"))
         ->get();
     }
 
@@ -420,7 +421,7 @@ class Film extends Model
      */
     public static function showJumlahNominasiMasingProduser()
     {
-        return self::select('produsers.nm_produser',\DB::raw('films.nominasi as jml'))
+        return self::select('produsers.nm_produser',\DB::raw('count(films.nominasi) as jml'))
         ->leftJoin('produsers','produsers.kd_produser','=','films.produser')
         ->groupBy('produsers.nm_produser')
         ->get();
@@ -433,7 +434,7 @@ class Film extends Model
      */
     public static function showPendapatanProduserMarvel()
     {
-        return self::select('produsers.nm_produser',\DB::raw('films.pendapatan as jml'))
+        return self::select('produsers.nm_produser',\DB::raw('count(films.pendapatan) as jml'))
         ->leftJoin('produsers','produsers.kd_produser','=','films.produser')
         ->groupBy('produsers.nm_produser')
         ->where('produsers.nm_produser','MARVEL')
@@ -447,7 +448,7 @@ class Film extends Model
      */
     public static function showPendapatanProduserSkalaNotInternational()
     {
-        return self::select('produsers.nm_produser',\DB::raw('films.pendapatan as jml'))
+        return self::select('produsers.nm_produser',\DB::raw('count(films.pendapatan) as jml'))
         ->leftJoin('produsers','produsers.kd_produser','=','films.produser')
         ->groupBy('produsers.nm_produser')
         ->where('produsers.international','TIDAK')
